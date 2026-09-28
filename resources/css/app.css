@@ -1,0 +1,246 @@
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
+@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Pretendard', 'Noto Sans KR', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f5f5f5;
+    --color-zinc-200: #e5e5e5;
+    --color-zinc-300: #d4d4d4;
+    --color-zinc-400: #a3a3a3;
+    --color-zinc-500: #737373;
+    --color-zinc-600: #525252;
+    --color-zinc-700: #404040;
+    --color-zinc-800: #262626;
+    --color-zinc-900: #171717;
+    --color-zinc-950: #0a0a0a;
+
+    --color-accent: var(--color-neutral-800);
+    --color-accent-content: var(--color-neutral-800);
+    --color-accent-foreground: var(--color-white);
+}
+
+@layer theme {
+    .dark {
+        --color-accent: var(--color-white);
+        --color-accent-content: var(--color-white);
+        --color-accent-foreground: var(--color-neutral-800);
+    }
+}
+
+@layer base {
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    button:not(:disabled),
+    select:not(:disabled),
+    summary,
+    a[href],
+    label[for],
+    [role='button']:not([aria-disabled='true']),
+    input[type='button']:not(:disabled),
+    input[type='submit']:not(:disabled),
+    input[type='reset']:not(:disabled),
+    input[type='checkbox']:not(:disabled),
+    input[type='radio']:not(:disabled),
+    input[type='range']:not(:disabled),
+    ::file-selector-button {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+}
+
+[data-flux-field]:not(ui-radio, ui-checkbox) {
+    @apply grid gap-2;
+}
+
+[data-flux-label] {
+    @apply  !mb-0 !leading-tight;
+}
+
+input:focus[data-flux-control],
+textarea:focus[data-flux-control],
+select:focus[data-flux-control] {
+    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+/* \[:where(&)\]:size-4 {
+    @apply size-4;
+} */
+
+/* Public database dark theme — aligned with the starter kit's auth screens. */
+.dark body {
+    color-scheme: dark;
+}
+
+.dark body .bg-white {
+    background-color: #17191d !important;
+}
+
+.dark body .bg-slate-50 {
+    background-color: #1d2025 !important;
+}
+
+.dark body .bg-slate-100 {
+    background-color: #252830 !important;
+}
+
+.dark body .bg-\[\#f3f5f7\] {
+    background-color: #0c0d0f !important;
+}
+
+.dark body .text-\[\#202225\],
+.dark body .text-slate-900,
+.dark body .text-slate-800,
+.dark body .text-slate-700 {
+    color: #eceef2 !important;
+}
+
+.dark body .text-slate-600,
+.dark body .text-slate-500 {
+    color: #a7acb6 !important;
+}
+
+.dark body .text-slate-400 {
+    color: #737986 !important;
+}
+
+.dark body .border,
+.dark body .border-b,
+.dark body .border-t,
+.dark body .border-slate-100,
+.dark body .border-slate-200,
+.dark body .border-slate-300 {
+    border-color: #2b2f37 !important;
+}
+
+.dark body input,
+.dark body select,
+.dark body textarea {
+    border-color: #353942;
+    background-color: #202329;
+    color: #eceef2;
+}
+
+.dark body input::placeholder {
+    color: #676d78;
+}
+
+.dark body option {
+    background-color: #202329;
+    color: #eceef2;
+}
+
+.dark body .hover\:bg-slate-50:hover,
+.dark body .hover\:bg-\[\#f7f6ff\]:hover,
+.dark body .hover\:bg-\[\#f6f5ff\]:hover {
+    background-color: #22252d !important;
+}
+
+.dark body .bg-\[\#f8f7ff\] {
+    background-color: #1c1a2b !important;
+}
+
+.dark body .bg-\[\#eeebff\],
+.dark body .bg-\[\#f0edff\] {
+    background-color: #292442 !important;
+}
+
+.dark body .bg-white\/90 {
+    color: #202225 !important;
+}
+
+.dark body footer {
+    background-color: #111317 !important;
+}
+
+/* Public wiki typography: keep dense data screens readable at a 13–14px baseline. */
+.wiki-shell {
+    font-size: 14px;
+}
+
+.wiki-shell .text-\[9px\] {
+    font-size: 11px;
+    line-height: 1rem;
+}
+
+.wiki-shell .text-\[10px\] {
+    font-size: 12px;
+    line-height: 1.1rem;
+}
+
+.wiki-shell .text-\[11px\] {
+    font-size: 13px;
+    line-height: 1.2rem;
+}
+
+.wiki-shell .text-xs {
+    font-size: 14px;
+    line-height: 1.3rem;
+}
+
+.wiki-shell .text-sm {
+    font-size: 15px;
+    line-height: 1.4rem;
+}
+
+.wiki-shell .text-\[15px\] {
+    font-size: 16px;
+    line-height: 1.4rem;
+}
+
+.wiki-shell .spica-skill .hi {
+    color: #f0a8dc;
+    font-weight: 800;
+}
+
+.wiki-shell .spica-skill hr {
+    margin: 0.75rem 0;
+    border-color: #343841;
+}
+
+/* Separate the selected snapshot controls from the scrollable snapshot grid. */
+.wiki-shell .bg-pink-300\/5 {
+    margin-top: 1rem;
+    border-color: rgba(249, 168, 212, 0.28) !important;
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Shared form controls for dense database screens. */
+.wiki-shell select:not([multiple]) {
+    min-height: 42px;
+    border-radius: 3px !important;
+    padding: 0.625rem 2.5rem 0.625rem 0.875rem !important;
+    background-position: right 0.875rem center !important;
+    line-height: 1.25rem;
+}
+
+.dark .wiki-shell .wiki-top-search input,
+.dark .wiki-shell .wiki-top-search input:focus {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 0 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+}

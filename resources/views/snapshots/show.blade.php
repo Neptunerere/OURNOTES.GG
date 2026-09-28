@@ -1,0 +1,29 @@
+<x-layouts.wiki :title="$snapshot->name">
+    @php
+        $rates = match($snapshot->level_growth) {
+            1 => [1=>.4086,30=>.6571,40=>.7429,50=>.8286,70=>1],
+            2 => [1=>.4075,30=>.625,40=>.7,50=>.775,70=>.925,80=>1],
+            default => [1=>.4067,30=>.6,40=>.6667,50=>.7333,70=>.8667,80=>.9333,90=>1],
+        };
+        $baseMax = [1=>30,2=>40,3=>50,5=>50][$snapshot->level_growth] ?? 50;
+        $finalMax = [1=>70,2=>80,3=>90,5=>90][$snapshot->level_growth] ?? 90;
+    @endphp
+    <main class="mx-auto max-w-[1400px] px-4 py-6 lg:px-8" x-data="snapStats(@js(['max'=>['performance'=>$snapshot->performance,'technique'=>$snapshot->technique,'visual'=>$snapshot->visual],'rates'=>$rates,'baseMax'=>$baseMax,'finalMax'=>$finalMax,'support'=>$snapshot->support_skill_levels ?? [],'gekisou'=>$snapshot->gekisou_support_levels ?? []]))">
+        <a href="{{route('snapshots.index')}}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 스냅 데이터베이스</a>
+        <div class="mt-4 grid gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
+            <aside class="overflow-hidden rounded-xl border bg-white">
+                <div class="aspect-[4/3] bg-slate-100">@if($snapshot->image_url)<img src="{{$snapshot->image_url}}" class="h-full w-full object-cover" alt="{{$snapshot->name}}">@endif</div>
+                <div class="p-6"><div class="flex items-center gap-2"><x-rarity-icon :rarity="$snapshot->rarity" /><x-type-icon :type="$snapshot->type" /><x-band-logo :band="$snapshot->band" size="md" class="ml-auto" /></div><h1 class="mt-4 text-2xl font-black">{{$snapshot->name}}</h1><p class="mt-2 text-sm text-slate-400">{{$snapshot->character_name}}</p>@if($snapshot->released_at)<p class="mt-3 text-[10px] text-slate-400">출시일 {{$snapshot->released_at->format('Y.m.d')}}</p>@endif</div>
+            </aside>
+            <section class="space-y-5">
+                <div class="overflow-hidden rounded-xl border bg-white">
+                    <div class="border-b p-6"><div class="flex flex-wrap items-center justify-between gap-4"><div><p class="text-[10px] font-bold text-[#8b7cf6]">SPICA STATUS</p><h2 class="mt-1 text-lg font-black">레벨별 능력치 <span class="ml-2 text-sm text-slate-400">Lv.<span x-text="level"></span></span></h2></div><b class="text-3xl tabular-nums" x-text="number(total)"></b></div><div class="mt-5 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end"><label class="text-xs text-slate-400">레벨 <b class="float-right text-[#8b7cf6]" x-text="level"></b><input type="range" min="1" :max="maxLevel" x-model.number="level" class="mt-2 w-full accent-[#8b7cf6]"></label><div class="flex gap-1">@foreach([1,$baseMax,$finalMax] as $lv)<button @click="level=Math.min({{$lv}},maxLevel)" class="rounded border px-3 py-2 text-xs font-bold" :class="level==={{$lv}}?'bg-[#6c5ce7] text-white':''">{{$lv}}</button>@endforeach</div></div><div class="mt-4 flex items-center gap-3"><span class="text-xs text-slate-400">각성</span>@foreach(range(0,4) as $rank)<button @click="rank={{$rank}};level=Math.min(level,maxLevel)" class="grid size-9 place-items-center rounded border text-xs font-bold" :class="rank==={{$rank}}?'bg-pink-300 text-slate-950':''">{{$rank}}</button>@endforeach</div></div>
+                    <div class="grid sm:grid-cols-4 sm:divide-x"><div class="p-5 text-center"><span class="text-xs text-slate-400">합계</span><b class="mt-2 block text-2xl" x-text="number(total)"></b></div>@foreach([['퍼포먼스','performance'],['테크닉','technique'],['비주얼','visual']] as [$label,$key])<div class="p-5 text-center"><span class="text-xs text-slate-400">{{$label}}</span><b class="mt-2 block text-xl text-[#b8adff]" x-text="number(stat('{{$key}}'))"></b></div>@endforeach</div>
+                </div>
+                <div class="rounded-xl border bg-white p-6"><div class="flex flex-wrap items-center justify-between gap-4"><h2 class="text-lg font-black">서포트 스킬</h2><div class="flex gap-1">@foreach(range(1,5) as $lv)<button @click="skillLevel={{$lv}}" class="grid size-9 place-items-center rounded border text-xs font-bold" :class="skillLevel==={{$lv}}?'bg-pink-300 text-slate-950':''">{{$lv}}</button>@endforeach</div></div><div class="mt-5 grid gap-4 xl:grid-cols-2"><article class="rounded-lg border p-4"><p class="text-[10px] font-bold text-slate-400">LIVE SUPPORT</p><template x-for="text in skills('support')"><div class="spica-skill mt-3 border-t pt-3 first:border-0 first:pt-0 text-sm leading-6" x-html="text"></div></template></article><article class="rounded-lg border p-4"><p class="text-[10px] font-bold text-slate-400">GEKISOU SUPPORT</p><template x-for="text in skills('gekisou')"><div class="spica-skill mt-3 border-t pt-3 first:border-0 first:pt-0 text-sm leading-6" x-html="text"></div></template></article></div></div>
+                @if($snapshot->diary)<article class="rounded-xl border bg-white p-6"><p class="text-[10px] font-bold text-[#8b7cf6]">DIARY</p><p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-300">{{$snapshot->diary}}</p></article>@endif
+            </section>
+        </div>
+    </main>
+    <script>function snapStats(data){return{level:data.baseMax,rank:0,skillLevel:1,data,get maxLevel(){return data.baseMax+this.rank*10},rate(){let p=Object.entries(data.rates).map(([l,r])=>[+l,+r]).sort((a,b)=>a[0]-b[0]);let e=p.find(x=>x[0]===this.level);if(e)return e[1];let lo=p[0],hi=p.at(-1);for(let i=1;i<p.length;i++)if(this.level<p[i][0]){lo=p[i-1];hi=p[i];break}return lo[1]+(hi[1]-lo[1])*(this.level-lo[0])/(hi[0]-lo[0])},stat(k){return Math.round(data.max[k]*this.rate()*(1+this.rank*.025))},get total(){return this.stat('performance')+this.stat('technique')+this.stat('visual')},number(n){return new Intl.NumberFormat('ko-KR').format(n)},skills(k){let groups=data[k]||[];return groups.map(g=>g?.[this.skillLevel]||g?.[String(this.skillLevel)]).filter(Boolean)}}}</script>
+</x-layouts.wiki>
