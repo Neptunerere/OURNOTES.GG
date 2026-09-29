@@ -85,11 +85,12 @@ class SyncAllSpicaData extends Command
                 ?? Member::query()->where('character_id', $character->id)->where('name', $name)->first()
                 ?? new Member;
 
-            $imagePath = $member->image_url;
+            $filename = $slug.'.webp';
+            $bundledImage = $imageDirectory.DIRECTORY_SEPARATOR.$filename;
+            $imagePath = is_file($bundledImage) ? '/images/members/'.$filename : $member->image_url;
             if (! $this->option('skip-images') && filled($source['full'] ?? null)) {
                 $image = Http::timeout(45)->retry(2, 300)->withUserAgent('OurNotesLab/1.0')->get('https://spica.wiki'.$source['full']);
                 if ($image->successful()) {
-                    $filename = $slug.'.webp';
                     file_put_contents($imageDirectory.DIRECTORY_SEPARATOR.$filename, $image->body());
                     $imagePath = '/images/members/'.$filename;
                     $imageCount++;
@@ -146,13 +147,15 @@ class SyncAllSpicaData extends Command
             $snapshotSlugs[] = $slug;
             $snapshot = Snapshot::firstOrNew(['slug' => $slug]);
             $characterName = collect($source['chars'] ?? [$source['char'] ?? null])->filter()->map(fn ($id) => $characterNames->get((int) $id))->filter()->join(' · ');
-            $imagePath = $snapshot->image_url;
+            $filename = $slug.'.webp';
+            $bundledImage = $snapshotDirectory.DIRECTORY_SEPARATOR.$filename;
+            $imagePath = is_file($bundledImage) ? '/images/snapshots/'.$filename : $snapshot->image_url;
 
             if (! $this->option('skip-images') && filled($source['full'] ?? null)) {
                 $image = Http::timeout(45)->retry(2, 300)->withUserAgent('OurNotesLab/1.0')->get('https://spica.wiki'.$source['full']);
                 if ($image->successful()) {
-                    file_put_contents($snapshotDirectory.DIRECTORY_SEPARATOR.$slug.'.webp', $image->body());
-                    $imagePath = '/images/snapshots/'.$slug.'.webp';
+                    file_put_contents($snapshotDirectory.DIRECTORY_SEPARATOR.$filename, $image->body());
+                    $imagePath = '/images/snapshots/'.$filename;
                     $snapshotImageCount++;
                 }
             }

@@ -38,12 +38,14 @@ class SyncSpicaSongs extends Command
             $slug = $source['slug'];
             $slugs[] = $slug;
             $song = Song::firstOrNew(['slug' => $slug]);
-            $imagePath = $song->image_url;
+            $filename = $slug.'.webp';
+            $bundledImage = $directory.DIRECTORY_SEPARATOR.$filename;
+            $imagePath = is_file($bundledImage) ? '/images/songs/'.$filename : $song->image_url;
             if (! $this->option('skip-images') && filled($source['jacket'] ?? null)) {
                 $image = Http::timeout(45)->retry(2, 300)->withUserAgent('OurNotesLab/1.0')->get('https://spica.wiki'.$source['jacket']);
                 if ($image->successful()) {
-                    file_put_contents($directory.DIRECTORY_SEPARATOR.$slug.'.webp', $image->body());
-                    $imagePath = '/images/songs/'.$slug.'.webp';
+                    file_put_contents($directory.DIRECTORY_SEPARATOR.$filename, $image->body());
+                    $imagePath = '/images/songs/'.$filename;
                     $images++;
                 }
             }
