@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Snapshot;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SnapshotController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $snapshots = Snapshot::query()
             ->when($request->filled('q'), fn ($query) => $query->where(fn ($q) => $q
@@ -34,7 +35,7 @@ class SnapshotController extends Controller
         ]);
     }
 
-    public function show(Snapshot $snapshot)
+    public function show(Snapshot $snapshot): View
     {
         return view('snapshots.show', compact('snapshot'));
     }

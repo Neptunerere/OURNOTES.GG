@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Member extends Model
 {
@@ -15,7 +16,8 @@ class Member extends Model
 
     protected $appends = ['display_performance', 'display_technique', 'display_visual', 'display_power'];
 
-    public function character()
+    /** @return BelongsTo<Character, $this> */
+    public function character(): BelongsTo
     {
         return $this->belongsTo(Character::class);
     }

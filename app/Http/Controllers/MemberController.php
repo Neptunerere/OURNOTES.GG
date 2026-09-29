@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class MemberController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $members = Member::with('character')
             ->when($request->filled('q'), fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', '%'.$request->q.'%')->orWhereHas('character', fn ($c) => $c->where('name', 'like', '%'.$request->q.'%'))))
@@ -28,7 +29,7 @@ class MemberController extends Controller
         ]);
     }
 
-    public function show(Member $member)
+    public function show(Member $member): View
     {
         return view('members.show', ['member' => $member->load('character')]);
     }

@@ -35,12 +35,14 @@ class SyncAllSpicaData extends Command
         if ($file = $this->option('file')) {
             if (! is_file($file) || ! is_array($data = json_decode(file_get_contents($file), true))) {
                 $this->error('지정한 SPICA JSON 파일을 읽을 수 없습니다.');
+
                 return self::FAILURE;
             }
         } else {
             $response = Http::timeout(60)->retry(2, 500)->withUserAgent('OurNotesLab/1.0 (fan database)')->get(self::DATA_URL);
             if ($response->failed() || ! is_array($data = $response->json())) {
                 $this->error("SPICA 응답 오류: {$response->status()}");
+
                 return self::FAILURE;
             }
         }
@@ -193,7 +195,7 @@ class SyncAllSpicaData extends Command
         Snapshot::query()->whereNotIn('slug', $snapshotSlugs)->delete();
 
         $this->table(['밴드', '캐릭터'], collect(self::BAND_NAMES)->map(fn ($band) => [$band, Character::where('band', $band)->count()]));
-        $this->info("캐릭터 ".count($characters)."명, 멤버 카드 {$memberCount}장, 스냅 {$snapshotCount}장, 이미지 ".($imageCount + $snapshotImageCount)."장을 동기화했습니다.");
+        $this->info('캐릭터 '.count($characters)."명, 멤버 카드 {$memberCount}장, 스냅 {$snapshotCount}장, 이미지 ".($imageCount + $snapshotImageCount).'장을 동기화했습니다.');
 
         return self::SUCCESS;
     }
@@ -210,12 +212,14 @@ class SyncAllSpicaData extends Command
         }
         $levels = data_get($data, "skills.{$group}.{$id}.levels", []);
         $selected = collect($levels)->firstWhere('lv', $level) ?? collect($levels)->last();
+
         return $selected['ko'] ?? null;
     }
 
     private function firstPercent(?string $text): int
     {
         preg_match('/([0-9]+(?:\.[0-9]+)?)%/', strip_tags($text ?? ''), $match);
+
         return (int) round((float) ($match[1] ?? 0));
     }
 
@@ -224,6 +228,7 @@ class SyncAllSpicaData extends Command
         if ($id === 0) {
             return [];
         }
+
         return collect(data_get($data, "skills.{$group}.{$id}.levels", []))
             ->mapWithKeys(fn ($level) => [(int) $level['lv'] => $level['ko'] ?? ''])
             ->all();

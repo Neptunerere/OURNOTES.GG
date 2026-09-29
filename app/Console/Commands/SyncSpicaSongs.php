@@ -13,8 +13,10 @@ use Illuminate\Support\Facades\Http;
 class SyncSpicaSongs extends Command
 {
     private const DATA_URL = 'https://spica.wiki/ournotes/data/d-5b79324a26.json';
-    private const BANDS = [1=>'MyGO!!!!!',2=>'Ave Mujica',3=>'무겐다이 뮤타입',4=>'millsage',5=>'일가 Dumb Rock!'];
-    private const ATTRS = [1=>'레드',2=>'블루',3=>'그린',4=>'옐로우',5=>'퍼플'];
+
+    private const BANDS = [1 => 'MyGO!!!!!', 2 => 'Ave Mujica', 3 => '무겐다이 뮤타입', 4 => 'millsage', 5 => '일가 Dumb Rock!'];
+
+    private const ATTRS = [1 => '레드', 2 => '블루', 3 => '그린', 4 => '옐로우', 5 => '퍼플'];
 
     public function handle(): int
     {
@@ -26,11 +28,14 @@ class SyncSpicaSongs extends Command
         }
         if (! is_array($data)) {
             $this->error('SPICA 데이터를 읽을 수 없습니다.');
+
             return self::FAILURE;
         }
 
         $directory = public_path('images/songs');
-        if (! $this->option('skip-images') && ! is_dir($directory)) mkdir($directory, 0755, true);
+        if (! $this->option('skip-images') && ! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
         $slugs = [];
         $images = 0;
 
@@ -74,6 +79,7 @@ class SyncSpicaSongs extends Command
         }
         Song::whereNotIn('slug', $slugs)->delete();
         $this->info('곡 '.count($slugs)."개, 재킷 {$images}장을 동기화했습니다.");
+
         return self::SUCCESS;
     }
 }

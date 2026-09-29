@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Character;
 use App\Models\Member;
 use App\Models\Song;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke()
+    public function __invoke(): View
     {
         return view('home', [
             'featured' => Member::with('character')->orderByDesc('score_up')->orderByDesc('performance')->limit(10)->get(),

@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Song;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SongController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $difficulty = in_array($request->difficulty, ['easy', 'normal', 'hard', 'expert'], true)
             ? $request->difficulty

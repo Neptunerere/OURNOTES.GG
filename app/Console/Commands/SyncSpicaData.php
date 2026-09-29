@@ -32,6 +32,12 @@ class SyncSpicaData extends Command
         @$document->loadHTML($response->body(), LIBXML_NOERROR | LIBXML_NOWARNING);
         $xpath = new \DOMXPath($document);
         $links = $xpath->query('//a[contains(@href, "/ournotes/ko/member/")]');
+        if ($links === false) {
+            $this->error('SPICA 멤버 링크를 분석할 수 없습니다.');
+
+            return self::FAILURE;
+        }
+
         $members = Member::with('character')->get();
         $updated = 0;
         $images = 0;
@@ -41,6 +47,10 @@ class SyncSpicaData extends Command
         }
 
         foreach ($links as $link) {
+            if (! $link instanceof \DOMElement) {
+                continue;
+            }
+
             $label = trim(preg_replace('/\s+/u', ' ', $link->textContent));
             $href = $link->getAttribute('href');
             $sourceUrl = str_starts_with($href, 'http') ? $href : 'https://spica.wiki'.$href;
