@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\SnapshotController;
@@ -20,6 +21,8 @@ Route::get('/formation', fn () => view('formation', [
     'snapshots' => Snapshot::orderBy('name')->get(),
     'songs' => Song::whereNotNull('note_count')->orderByDesc('expert')->orderBy('title')->get(),
 ]))->name('formation');
+Route::get('/guides', [GuideController::class, 'index'])->name('guides');
+Route::get('/guides/{slug}', [GuideController::class, 'show'])->name('guides.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
