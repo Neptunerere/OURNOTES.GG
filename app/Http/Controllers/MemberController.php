@@ -19,7 +19,12 @@ class MemberController extends Controller
         return view('members.index', [
             'members' => $members,
             'bands' => Member::join('characters', 'characters.id', '=', 'members.character_id')->distinct()->orderBy('characters.band')->pluck('characters.band'),
-            'rarities' => Member::distinct()->orderByDesc('rarity_id')->pluck('rarity'),
+            'rarities' => Member::query()
+                ->select('rarity')
+                ->selectRaw('MAX(rarity_id) as max_rarity_id')
+                ->groupBy('rarity')
+                ->orderByDesc('max_rarity_id')
+                ->pluck('rarity'),
         ]);
     }
 

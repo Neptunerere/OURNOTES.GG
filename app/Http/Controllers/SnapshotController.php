@@ -25,7 +25,12 @@ class SnapshotController extends Controller
             'snapshots' => $snapshots,
             'bands' => Snapshot::distinct()->orderBy('band')->pluck('band'),
             'types' => Snapshot::distinct()->orderBy('type')->pluck('type'),
-            'rarities' => Snapshot::distinct()->orderByDesc('rarity_id')->pluck('rarity'),
+            'rarities' => Snapshot::query()
+                ->select('rarity')
+                ->selectRaw('MAX(rarity_id) as max_rarity_id')
+                ->groupBy('rarity')
+                ->orderByDesc('max_rarity_id')
+                ->pluck('rarity'),
         ]);
     }
 
