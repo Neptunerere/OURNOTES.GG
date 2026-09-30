@@ -36,4 +36,9 @@ class SongController extends Controller
             'levels' => $levels,
         ]);
     }
+
+    public function show(Song $song): View
+    {
+        return view('songs.show', ['song' => $song]);
+    }
 }

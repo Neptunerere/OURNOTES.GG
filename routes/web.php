@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\GachaController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MemberController;
@@ -14,6 +16,10 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/members', [MemberController::class, 'index'])->name('members.index');
 Route::get('/members/{member:slug}', [MemberController::class, 'show'])->name('members.show');
 Route::get('/songs', [SongController::class, 'index'])->name('songs.index');
+Route::get('/songs/{song:slug}', [SongController::class, 'show'])->name('songs.show');
+Route::get('/events', [EventController::class, 'index'])->name('events.index');
+Route::get('/events/{event}', [EventController::class, 'show'])->whereNumber('event')->name('events.show');
+Route::get('/gacha', [GachaController::class, 'index'])->name('gacha.index');
 Route::get('/snapshots', [SnapshotController::class, 'index'])->name('snapshots.index');
 Route::get('/snapshots/{snapshot:slug}', [SnapshotController::class, 'show'])->name('snapshots.show');
 Route::get('/formation', fn () => view('formation', [
