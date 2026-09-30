@@ -12,7 +12,7 @@
         <div class="min-w-0">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @forelse($songs as $song)
-                <article class="group overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-[#8b7cf6] hover:shadow-xl">
+                <a href="{{ route('songs.show', $song) }}" class="group block overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-[#8b7cf6] hover:shadow-xl">
                     <div class="relative aspect-square overflow-hidden bg-slate-100">
                         @if($song->image_url)<img src="{{$song->image_url}}" alt="{{$song->title}} 재킷" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" loading="lazy">@endif
                         <div class="absolute left-3 top-3 flex items-center gap-2 rounded bg-black/65 px-2 py-1.5 backdrop-blur"><x-type-icon :type="$song->attribute" size="sm" /><span class="text-[10px] font-bold text-white">{{$song->type}}</span></div>
@@ -26,7 +26,7 @@
                         </div>
                         @if($song->bpm || $song->composer)<div class="mt-3 space-y-1 border-t pt-3 text-[10px] text-slate-400">@if($song->bpm)<p><span class="font-bold text-slate-500">BPM</span> {{$song->bpm}}</p>@endif @if($song->composer)<p class="truncate" title="{{$song->composer}}"><span class="font-bold text-slate-500">작곡</span> {{$song->composer}}</p>@endif</div>@endif
                     </div>
-                </article>
+                </a>
             @empty
                 <div class="col-span-full rounded-lg border bg-white p-14 text-center text-sm text-slate-400">조건에 맞는 곡이 없습니다.</div>
             @endforelse
