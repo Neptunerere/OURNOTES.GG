@@ -20,6 +20,7 @@ Route::get('/songs/{song:slug}', [SongController::class, 'show'])->name('songs.s
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [EventController::class, 'show'])->whereNumber('event')->name('events.show');
 Route::get('/gacha', [GachaController::class, 'index'])->name('gacha.index');
+Route::get('/gacha/{gacha}', [GachaController::class, 'show'])->whereNumber('gacha')->name('gacha.show');
 Route::get('/snapshots', [SnapshotController::class, 'index'])->name('snapshots.index');
 Route::get('/snapshots/{snapshot:slug}', [SnapshotController::class, 'show'])->name('snapshots.show');
 Route::get('/formation', fn () => view('formation', [

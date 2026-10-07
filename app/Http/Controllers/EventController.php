@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class EventController extends Controller
@@ -21,13 +22,25 @@ class EventController extends Controller
     /** @return array<string, mixed> */
     private function event(): array
     {
+        $startsAt = '2026-09-30 18:00:00';
+        $endsAt = '2026-10-08 20:59:00';
+        $now = now('Asia/Seoul');
+        $start = Carbon::parse($startsAt, 'Asia/Seoul');
+        $end = Carbon::parse($endsAt, 'Asia/Seoul');
+
+        $status = match (true) {
+            $now->lt($start) => '예정',
+            $now->lte($end) => '진행 중',
+            default => '종료',
+        };
+
         return [
             'id' => 1,
             'title' => '사랑의 격류 AtoZ',
-            'status' => '예정',
+            'status' => $status,
             'server' => '일본',
-            'starts_at' => '2026. 09. 30. 18:00',
-            'ends_at' => '2026. 10. 08. 20:59',
+            'starts_at' => $start->format('Y. m. d. H:i'),
+            'ends_at' => $end->format('Y. m. d. H:i'),
             'display_ends_at' => '2026. 10. 10. 20:59',
             'timezone' => 'UTC+9',
             'banner' => '/images/events/1/banner.webp',

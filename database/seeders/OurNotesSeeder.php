@@ -34,7 +34,7 @@ class OurNotesSeeder extends Seeder
             Member::updateOrCreate(['slug' => md5($characterName.$name)], [
                 'character_id' => $character->id, 'name' => $name, 'rarity' => 'SSR', 'type' => $type, 'performance' => $performance, 'technique' => $technique, 'visual' => $visual,
                 'skill_type' => $skillType, 'score_up' => $scoreUp, 'leader_skill' => $character->band.' 멤버의 모든 파라미터 UP', 'live_skill' => "[{$skillType}] 5초간 스코어 {$scoreUp}% UP",
-                'released_at' => '2026-09-24', 'source_url' => 'https://spica.wiki/ournotes/ko/members',
+                'released_at' => '2026-09-24', 'source_url' => 'https://bdon.moe/ko/cards',
             ]);
         }
 
@@ -42,7 +42,7 @@ class OurNotesSeeder extends Seeder
             ['焚音打', 'MyGO!!!!!', 10, 15, 23, 29, 'JUST'], ['往欄印', 'Ave Mujica', 9, 14, 23, 28, 'LUCK'], ['KiLLKiSS', 'Ave Mujica', 8, 13, 21, 28, 'JUST'], ['기사개전', 'Ave Mujica', 9, 14, 21, 28, '3종'], ['everscape', 'MyGO!!!!!', 8, 13, 20, 28, 'COMBO'], ['한 방울', 'MyGO!!!!!', 7, 14, 21, 27, 'JUST'], ['Ave Mujica', 'Ave Mujica', 8, 13, 21, 27, 'COMBO'], ['멜로디', 'MyGO!!!!!', 7, 12, 17, 27, 'LUCK'], ['증명찬가', 'MyGO!!!!!', 8, 13, 22, 26, '3종'], ['MUGEN MY WORLD', 'Mugendai MewType', 8, 14, 19, 26, 'JUST'], ['청춘 콤플렉스', 'MyGO!!!!!', 8, 13, 20, 25, 'JUST'], ['UNDEAD', 'Mugendai MewType', 8, 14, 20, 24, '3종'],
         ];
         foreach ($songs as [$title, $band, $easy, $normal, $hard, $expert, $gekiso]) {
-            Song::updateOrCreate(['slug' => md5($title)], compact('title', 'band', 'easy', 'normal', 'hard', 'expert', 'gekiso') + ['type' => '오리지널', 'source_url' => 'https://spica.wiki/ournotes/ko/songs']);
+            Song::updateOrCreate(['slug' => md5($title)], compact('title', 'band', 'easy', 'normal', 'hard', 'expert', 'gekiso') + ['type' => '오리지널', 'source_url' => 'https://bdon.moe/ko/music']);
         }
 
         $snapshots = [
@@ -59,7 +59,7 @@ class OurNotesSeeder extends Seeder
         ];
         foreach ($snapshots as [$name, $characterName, $band, $type, $performance, $technique, $visual, $sourceSlug]) {
             Snapshot::updateOrCreate(['slug' => $sourceSlug], compact('name', 'band', 'type', 'performance', 'technique', 'visual') + [
-                'character_name' => $characterName, 'rarity' => 'SSR', 'live_support' => '장착한 멤버의 라이브 스킬 효과를 강화', 'gekiso_support' => '격주 라이브 판정 및 획득량 보조', 'source_url' => 'https://spica.wiki/ournotes/ko/snap/'.$sourceSlug,
+                'character_name' => $characterName, 'rarity' => 'SSR', 'live_support' => '장착한 멤버의 라이브 스킬 효과를 강화', 'gekiso_support' => '격주 라이브 판정 및 획득량 보조', 'source_url' => 'https://bdon.moe/ko/support-cards',
             ]);
         }
     }
