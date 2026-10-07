@@ -9,6 +9,7 @@ use App\Models\Song;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -132,6 +133,11 @@ class SyncBdonCatalog extends Command
             }
             $musicUpdates++;
         }
+
+        DB::table('data_sync_states')->updateOrInsert(
+            ['source' => 'bdon'],
+            ['last_synced_at' => now('UTC')],
+        );
 
         $this->table(['BDon 목록', '건수', '기존 레코드 갱신'], [
             ['멤버 카드', count($cards), $cardUpdates],
