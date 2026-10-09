@@ -1,4 +1,4 @@
-<x-layouts.wiki :title="'곡 데이터베이스'">
+<x-layouts.wiki :title="'곡'">
     <section class="mx-auto grid max-w-[1600px] gap-5 px-4 py-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:px-8">
         <aside>
             <form class="overflow-hidden rounded-lg border border-slate-200 bg-white lg:sticky lg:top-28">

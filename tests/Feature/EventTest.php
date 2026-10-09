@@ -16,6 +16,15 @@ class EventTest extends TestCase
             ->assertSee(route('events.show', 1));
     }
 
+    public function test_events_index_is_not_404_when_synced_event_catalog_exists(): void
+    {
+        \Illuminate\Support\Facades\Storage::disk('local')->put('bdon/events.json', json_encode([
+            ['id' => 2, 'title' => '부탁해, 사이드 스로', 'url' => 'https://bdon.moe/ko/events/2', 'starts_at' => '2026. 10. 09. 12:00', 'ends_at' => '2026. 10. 17. 14:59', 'images' => []],
+        ], JSON_UNESCAPED_UNICODE));
+
+        $this->get('/events')->assertOk()->assertSee('부탁해, 사이드 스로');
+    }
+
     public function test_event_detail_displays_bonus_and_rewards(): void
     {
         $this->get(route('events.show', 1))
@@ -35,7 +44,7 @@ class EventTest extends TestCase
             ->assertSee('나카마치 아라레')
             ->assertSee('매지컬 피지컬 파이팅!')
             ->assertSee('사랑의 격류 AtoZ 보상 스탬프')
-            ->assertSee('/images/events/1/reward-star.webp')
+            ->assertDontSee('/images/events/1/reward-star.webp')
             ->assertSee('보상 합계')
             ->assertSee('3,000,000 pt 달성 기준')
             ->assertSee('×280')

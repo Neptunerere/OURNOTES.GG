@@ -9,7 +9,7 @@
     @endphp
 
     <main class="mx-auto max-w-[1300px] px-4 py-6 lg:px-8">
-        <a href="{{ route('songs.index') }}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 곡 데이터베이스</a>
+        <a href="{{ route('songs.index') }}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 곡 목록</a>
 
         <div class="mt-4 grid gap-6 lg:grid-cols-[430px_minmax(0,1fr)]">
             <aside class="h-fit overflow-hidden rounded-xl border border-slate-200 bg-white">

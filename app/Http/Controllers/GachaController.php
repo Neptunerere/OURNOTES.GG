@@ -6,6 +6,8 @@ use App\Models\Member;
 use App\Models\Snapshot;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class GachaController extends Controller
@@ -14,12 +16,35 @@ class GachaController extends Controller
     {
         $pickups = Member::query()
             ->with('character')
-            ->whereIn('source_id', range(51, 64))
             ->get()
             ->keyBy('source_id');
 
-        $limitedGachas = collect($this->limitedGachas($pickups))
-            ->map(fn (array $gacha): array => $this->withStatus($gacha))
+        $gachas = collect($this->limitedGachas($pickups));
+        $supportIds = $gachas->flatMap(fn (array $gacha): array => $gacha['pickup_support_ids'] ?? ((int) $gacha['id'] === 3 ? [62, 63] : []))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $supports = $supportIds->isEmpty()
+            ? collect()
+            : Snapshot::query()->whereIn('source_id', $supportIds)->get()->keyBy('source_id');
+
+        $limitedGachas = $gachas
+            ->map(function (array $gacha) use ($supports): array {
+                $gacha = $this->withStatus($gacha);
+                $supportIds = $gacha['pickup_support_ids'] ?? ((int) $gacha['id'] === 3 ? [62, 63] : []);
+                $gacha['supports'] = collect($supportIds)
+                    ->map(fn (int $id) => $supports->get($id))
+                    ->filter()
+                    ->values();
+
+                return $gacha;
+            })
+            ->sortBy(fn (array $gacha): int => match ($gacha['status']) {
+                '진행 중' => 0,
+                '예정' => 1,
+                default => 2,
+            })
+            ->values()
             ->all();
 
         return view('gacha.index', [
@@ -32,7 +57,6 @@ class GachaController extends Controller
     {
         $pickups = Member::query()
             ->with('character')
-            ->whereIn('source_id', range(51, 64))
             ->get()
             ->keyBy('source_id');
         $allMembers = Member::query()->with('character')->get();
@@ -56,32 +80,33 @@ class GachaController extends Controller
             $event = $this->withStatus($event);
         }
 
-        $pickupMemberIds = match ($gacha) {
+        $synced = isset($event['source_id']);
+        $pickupMemberIds = $synced ? ($event['pickup_member_ids'] ?? []) : match ($gacha) {
             0 => [64],
             1 => [51, 52, 53, 54, 55],
             2 => [56, 57, 58, 59, 60],
             3 => [61, 62],
             default => [],
         };
-        $pickupSupportIds = $gacha === 3 ? [62, 63] : [];
+        $pickupSupportIds = $synced ? ($event['pickup_support_ids'] ?? []) : ($gacha === 3 ? [62, 63] : []);
         $event['pickup_members'] = $this->members($pickups, $pickupMemberIds);
-        if ($gacha === 0) {
+        if (! $synced && $gacha === 0) {
             $event['pickup_members'] = [$this->birthdayMember($pickups)];
         }
         $event['pickup_supports'] = $pickupSupportIds === []
             ? collect()
             : Snapshot::query()->whereIn('source_id', $pickupSupportIds)->get();
-        $event['rates'] = $this->ratesFor($gacha);
+        $event['rates'] = $synced && $event['rates'] ? $event['rates'] : $this->ratesFor($gacha);
         $event['draw_pools'] = $this->drawPools(
             $event['rates'],
             $allMembers,
             $pickupMemberIds,
             Snapshot::query()->get(),
             $pickupSupportIds,
-            $gacha === 0,
+            (! $synced && $gacha === 0) || ($synced && (int) $event['source_id'] === 11),
         );
         $event['permanent'] = $permanent;
-        $event['ten_pull_guarantee'] = in_array($gacha, [1, 2, 8], true);
+        $event['ten_pull_guarantee'] = $synced ? (bool) $event['ten_pull_guarantee'] : in_array($gacha, [1, 2, 8], true);
 
         return view('gacha.show', ['event' => $event]);
     }
@@ -154,7 +179,7 @@ class GachaController extends Controller
             if ($rate['category'] === '아이템') {
                 $cards = collect(['멤버 EXP', '스냅 EXP', '코인'])->map(fn (string $name): array => ['name' => $name, 'image' => null, 'pickup' => false])->all();
             } elseif ($birthday && $rate['rarity'] === '생일') {
-                $cards = [['name' => 'HAPPY BIRTHDAY 26-27 · 마하시 미쿠', 'image' => '/images/members/miku-happy-birthday.webp', 'pickup' => true]];
+                $cards = [['name' => 'HAPPY BIRTHDAY 26-27 · 마하시 미쿠', 'image' => $members->get(64)?->image_url, 'pickup' => true]];
             } else {
                 $source = $rate['category'] === '멤버' ? $members : $snapshots;
                 $ids = $rate['category'] === '멤버' ? $pickupMemberIds : $pickupSupportIds;
@@ -208,7 +233,7 @@ class GachaController extends Controller
      */
     private function limitedGachas(Collection $pickups): array
     {
-        return [
+        $gachas = [
             [
                 'id' => 0,
                 'title' => '마하시 미쿠 HAPPY BIRTHDAY 26-27 뽑기',
@@ -218,7 +243,7 @@ class GachaController extends Controller
                 'timezone' => 'UTC+9',
                 'theme' => 'from-cyan-400/30 via-pink-400/20 to-[#17191f]',
                 'image' => '/images/members/miku-wearing-a-smile.webp',
-                'banner' => '/images/gacha/banner-11.webp',
+                'banner' => null,
                 'image_alt' => '마하시 미쿠 생일 뽑기',
                 'member_count' => 61,
                 'support_count' => 60,
@@ -233,7 +258,7 @@ class GachaController extends Controller
                 'timezone' => 'UTC+9',
                 'theme' => 'from-violet-600/35 via-fuchsia-500/20 to-[#17191f]',
                 'image' => '/images/members/miku-can-t-hide-this-heartbeat.webp',
-                'banner' => '/images/gacha/banner-10.webp',
+                'banner' => null,
                 'image_alt' => '사이버 나이트 픽업 멤버',
                 'member_count' => 62,
                 'support_count' => 62,
@@ -248,7 +273,7 @@ class GachaController extends Controller
                 'timezone' => 'UTC+8',
                 'theme' => 'from-sky-500/30 via-indigo-500/20 to-[#17191f]',
                 'image' => '/images/members/tomori-a-cry-cast-at-the-shooting-stars.webp',
-                'banner' => '/images/gacha/banner-01.webp',
+                'banner' => null,
                 'image_alt' => 'MyGO!!!!! 픽업 멤버',
                 'members' => $this->members($pickups, range(51, 55)),
                 'member_count' => 60,
@@ -263,13 +288,36 @@ class GachaController extends Controller
                 'timezone' => 'UTC+8',
                 'theme' => 'from-violet-600/35 via-fuchsia-500/15 to-[#17191f]',
                 'image' => '/images/members/oblivionis-the-goddess-who-reigns-over-paradise.webp',
-                'banner' => '/images/gacha/banner-02.webp',
+                'banner' => null,
                 'image_alt' => 'Ave Mujica 픽업 멤버',
                 'members' => $this->members($pickups, range(56, 60)),
                 'member_count' => 60,
                 'support_count' => 60,
             ],
         ];
+
+        $payload = DB::getSchemaBuilder()->hasTable('data_sync_states')
+            ? DB::table('data_sync_states')->where('source', 'bdon-gachas')->value('payload')
+            : null;
+        $synced = is_string($payload) ? json_decode($payload, true) : null;
+        if (! is_array($synced)) {
+            $synced = Storage::disk('local')->json('bdon/gachas.json');
+        }
+        if (! is_array($synced)) return $gachas;
+        $byId = collect($gachas)->keyBy('id');
+        foreach ($synced as $record) {
+            if (! is_array($record) || ! isset($record['id'], $record['source_id'])) continue;
+            $banner = $record['banner'] ?? null;
+            if (is_string($banner) && str_starts_with($banner, '/gacha-media/') && ! is_file(public_path(ltrim($banner, '/')))) {
+                $record['banner'] = $record['source_banner'] ?? null;
+                $record['image'] = $record['banner'];
+            }
+            $record['members'] = $this->members($pickups, $record['pickup_member_ids'] ?? []);
+            $old = $byId->get((int) $record['id'], []);
+            $byId->put((int) $record['id'], array_merge($old, $record));
+        }
+
+        return $byId->values()->all();
     }
 
     /**
@@ -278,13 +326,13 @@ class GachaController extends Controller
     private function regularGachas(): array
     {
         return [
-            ['id' => 4, 'title' => '오픈 기념! SSR 확정 뽑기', 'description' => 'SSR 멤버 또는 스냅을 확정으로 획득', 'badge' => '상시', 'image' => '/images/members/taki-the-beat-to-keep.webp', 'banner' => '/images/gacha/banner-03.webp', 'member_count' => 10, 'support_count' => 10],
-            ['id' => 5, 'title' => '오픈 기념! SSR 멤버 확정 뽑기', 'description' => 'SSR 멤버를 확정으로 획득', 'badge' => '상시', 'image' => '/images/members/doloris-fleeting-echo.webp', 'banner' => '/images/gacha/banner-04.webp', 'member_count' => 10, 'support_count' => null],
-            ['id' => 6, 'title' => '오픈 기념! SSR 스냅 확정 뽑기', 'description' => 'SSR 스냅을 확정으로 획득', 'badge' => '상시', 'image' => '/images/snapshots/tomori-hand-in-hand.webp', 'banner' => '/images/gacha/banner-05.webp', 'member_count' => 0, 'support_count' => 10],
-            ['id' => 7, 'title' => '오픈 기념! SR 이상 확정 뽑기', 'description' => 'SR 이상의 멤버 또는 스냅을 획득', 'badge' => '상시', 'image' => '/images/members/anon-sparkling-stage.webp', 'banner' => '/images/gacha/banner-06.webp', 'member_count' => 35, 'support_count' => 35],
-            ['id' => 8, 'title' => '아워 노트 뽑기', 'description' => '멤버와 서포트 카드를 모집하는 상시 뽑기', 'badge' => '상시', 'image' => '/images/members/mortis-answering-melody.webp', 'banner' => '/images/gacha/banner-07.webp', 'member_count' => 60, 'support_count' => 60],
-            ['id' => 9, 'title' => '아워 노트 패스 뽑기', 'description' => '아워 노트 패스로 이용할 수 있는 전용 뽑기', 'badge' => '상시', 'image' => '/images/snapshots/oblivionis-noble-grace.webp', 'banner' => '/images/gacha/banner-08.webp', 'member_count' => 35, 'support_count' => 35],
-            ['id' => 10, 'title' => '광고 시청 뽑기', 'description' => '광고 시청으로 이용할 수 있는 뽑기', 'badge' => '상시', 'image' => '/images/members/amoris-dazzling-rhythm.webp', 'banner' => '/images/gacha/banner-09.webp', 'member_count' => 60, 'support_count' => 60],
+            ['id' => 4, 'title' => '오픈 기념! SSR 확정 뽑기', 'description' => 'SSR 멤버 또는 스냅을 확정으로 획득', 'badge' => '상시', 'image' => '/images/members/taki-the-beat-to-keep.webp', 'banner' => null, 'member_count' => 10, 'support_count' => 10],
+            ['id' => 5, 'title' => '오픈 기념! SSR 멤버 확정 뽑기', 'description' => 'SSR 멤버를 확정으로 획득', 'badge' => '상시', 'image' => '/images/members/doloris-fleeting-echo.webp', 'banner' => null, 'member_count' => 10, 'support_count' => null],
+            ['id' => 6, 'title' => '오픈 기념! SSR 스냅 확정 뽑기', 'description' => 'SSR 스냅을 확정으로 획득', 'badge' => '상시', 'image' => '/images/snapshots/tomori-hand-in-hand.webp', 'banner' => null, 'member_count' => 0, 'support_count' => 10],
+            ['id' => 7, 'title' => '오픈 기념! SR 이상 확정 뽑기', 'description' => 'SR 이상의 멤버 또는 스냅을 획득', 'badge' => '상시', 'image' => '/images/members/anon-sparkling-stage.webp', 'banner' => null, 'member_count' => 35, 'support_count' => 35],
+            ['id' => 8, 'title' => '아워 노트 뽑기', 'description' => '멤버와 서포트 카드를 모집하는 상시 뽑기', 'badge' => '상시', 'image' => '/images/members/mortis-answering-melody.webp', 'banner' => null, 'member_count' => 60, 'support_count' => 60],
+            ['id' => 9, 'title' => '아워 노트 패스 뽑기', 'description' => '아워 노트 패스로 이용할 수 있는 전용 뽑기', 'badge' => '상시', 'image' => '/images/snapshots/oblivionis-noble-grace.webp', 'banner' => null, 'member_count' => 35, 'support_count' => 35],
+            ['id' => 10, 'title' => '광고 시청 뽑기', 'description' => '광고 시청으로 이용할 수 있는 뽑기', 'badge' => '상시', 'image' => '/images/members/amoris-dazzling-rhythm.webp', 'banner' => null, 'member_count' => 60, 'support_count' => 60],
         ];
     }
 
@@ -309,7 +357,6 @@ class GachaController extends Controller
         $member->setAttribute('slug', null);
         $member->setAttribute('name', 'HAPPY BIRTHDAY 26-27');
         $member->setAttribute('rarity', '생일');
-        $member->setAttribute('image_url', '/images/members/miku-happy-birthday.webp');
         $member->setRelation('character', (object) ['name' => '마하시 미쿠']);
 
         return $member;
