@@ -1,4 +1,11 @@
 <x-layouts.wiki :title="$event['title']">
+    @php
+        $statusClasses = match ($event['status']) {
+            '진행 중' => 'border-emerald-300/40 bg-emerald-950/90 text-emerald-100',
+            '종료' => 'border-red-300/40 bg-red-950/90 text-red-100',
+            default => 'border-amber-300/40 bg-amber-950/90 text-amber-100',
+        };
+    @endphp
     <main class="mx-auto max-w-[1180px] px-4 py-7 lg:px-8 lg:py-10">
         <a href="{{ route('gacha.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 transition hover:text-white">← 뽑기 목록</a>
 
@@ -6,7 +13,7 @@
             <div class="relative h-48 overflow-hidden bg-gradient-to-br {{ $event['theme'] }} sm:h-72">
                 <img src="{{ $event['banner'] ?? $event['image'] }}" alt="{{ $event['image_alt'] }}" class="block h-full w-full object-cover object-center">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#111d33] via-[#111d33]/10 to-transparent"></div>
-                <span class="absolute left-4 top-4 rounded-full border border-sky-200/30 bg-sky-950/85 px-3 py-1.5 text-[10px] font-black text-sky-100">● {{ $event['permanent'] ? '상시' : $event['status'] }}</span>
+                <span class="absolute left-4 top-4 rounded-full border px-3 py-1.5 text-[10px] font-black shadow {{ $event['permanent'] ? 'border-sky-200/30 bg-sky-950/85 text-sky-100' : $statusClasses }}"><span class="mr-1.5 inline-block size-1.5 rounded-full bg-current"></span>{{ $event['permanent'] ? '상시' : $event['status'] }}</span>
                 <div class="absolute inset-x-0 bottom-0 p-5 sm:p-7">
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200">{{ $event['permanent'] ? 'Permanent' : 'Limited · Pick Up' }}</p>
                     <h1 class="mt-2 text-xl font-black text-white sm:text-2xl">{{ $event['title'] }}</h1>
@@ -94,7 +101,7 @@
                 <aside class="h-fit rounded-xl border border-white/10 bg-[#17243a] p-4">
                     <h2 class="text-sm font-black text-white">모집 정보</h2>
                     <dl class="mt-4 space-y-3 text-[11px]">
-                        <div class="flex justify-between gap-4"><dt class="text-slate-500">상태</dt><dd class="font-bold text-slate-200">{{ $event['permanent'] ? '상시' : $event['status'] }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-slate-500">상태</dt><dd class="font-bold {{ $event['permanent'] ? 'text-sky-200' : ($event['status'] === '진행 중' ? 'text-emerald-300' : ($event['status'] === '종료' ? 'text-red-300' : 'text-amber-200')) }}">{{ $event['permanent'] ? '상시' : $event['status'] }}</dd></div>
                         <div class="flex justify-between gap-4"><dt class="text-slate-500">개최 기간</dt><dd class="text-right text-slate-200">@if($event['permanent']) 상시 모집 @else {{ \Illuminate\Support\Carbon::parse($event['starts_at_raw'], 'Asia/Seoul')->format('Y. m. d. H:i') }}<br>~ {{ \Illuminate\Support\Carbon::parse($event['ends_at_raw'], 'Asia/Seoul')->format('Y. m. d. H:i') }} @endif</dd></div>
                         <div class="flex justify-between gap-4"><dt class="text-slate-500">시간대</dt><dd class="text-slate-200">{{ $event['permanent'] ? 'UTC+8' : '한국 시간 (UTC+9)' }}</dd></div>
                         <div class="flex justify-between gap-4"><dt class="text-slate-500">멤버</dt><dd class="text-slate-200">{{ $event['member_count'] }}종</dd></div>

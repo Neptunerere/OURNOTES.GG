@@ -3,20 +3,177 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EventController extends Controller
 {
     public function index(): View
     {
-        return view('events.index', ['events' => [$this->event()]]);
+        return view('events.index', ['events' => $this->events()]);
     }
 
     public function show(int $event): View
     {
-        abort_unless($event === 1, 404);
+        $events = collect($this->events())->keyBy('id');
+        if (! $events->has($event)) {
+            $legacy = $this->event();
+            abort_unless($event === 1, 404);
+            $events->put(1, $legacy);
+        }
 
-        return view('events.show', ['event' => $this->event()]);
+        return view('events.show', ['event' => $events->get($event)]);
+    }
+
+    public function image(int $event, string $file): StreamedResponse
+    {
+        abort_unless(preg_match('/^(?:banner|badge|logo|song|member-\d+|support-\d+)\.\w+$/', $file), 404);
+        $path = storage_path('app/public/events/'.$event.'/'.$file);
+        abort_unless(is_file($path), 404);
+
+        return response()->stream(function () use ($path): void {
+            $handle = fopen($path, 'rb');
+            if ($handle !== false) {
+                fpassthru($handle);
+                fclose($handle);
+            }
+        }, 200, ['Content-Type' => mime_content_type($path) ?: 'application/octet-stream', 'Cache-Control' => 'public, max-age=86400']);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function events(): array
+    {
+        return Cache::remember('bdon-events-v2', now()->addMinutes(15), function (): array {
+            $path = 'bdon/events.json';
+            $records = Storage::disk('local')->exists($path) ? Storage::disk('local')->json($path) : null;
+            $current = $this->event();
+            if (! is_array($records)) {
+                return [$current];
+            }
+
+            $mapped = collect($records)->filter(fn ($record): bool => is_array($record) && isset($record['id'], $record['title']))->map(function (array $record) use ($current): array {
+                $start = $this->parseEventDate($record['starts_at'] ?? null);
+                $end = $this->parseEventDate($record['ends_at'] ?? null) ?? $this->endDateFromDescription($record['description'] ?? null);
+                $status = match (true) {
+                    $start && now('Asia/Seoul')->lt($start) => '예정',
+                    $end && now('Asia/Seoul')->gt($end) => '종료',
+                    $start !== null => '진행 중',
+                    default => '예정',
+                };
+                $startLabel = $start?->format('Y. m. d. H:i') ?? ($record['starts_at'] ?? '');
+                $endLabel = $end?->format('Y. m. d. H:i') ?? ($record['ends_at'] ?? '');
+                if ((int) $record['id'] === 1) {
+                    return array_replace($current, [
+                        'title' => $record['title'],
+                        'starts_at' => $startLabel ?: $current['starts_at'],
+                        'ends_at' => $endLabel ?: $current['ends_at'],
+                        'display_ends_at' => $record['display_ends_at'] ?? $current['display_ends_at'],
+                        'status' => $status,
+                        'url' => $record['url'],
+                        'member_bonuses' => $this->mapBonusRows($record['member_bonuses'] ?? [], collect($record['images'] ?? [])->keyBy('key')),
+                        'support_bonuses' => $this->mapBonusRows($record['support_bonuses'] ?? [], collect($record['images'] ?? [])->keyBy('key')),
+                        'event_cards' => $this->mapEventCards($record['event_cards'] ?? [], collect($record['images'] ?? [])->keyBy('key')),
+                        'song' => $this->mapEventSong($record['song'] ?? null, collect($record['images'] ?? [])->keyBy('key')) ?? $current['song'],
+                    ]);
+                }
+
+                $fallback = $current;
+                $fallback['id'] = (int) $record['id'];
+                $fallback['title'] = $record['title'];
+                $fallback['status'] = $status;
+                $fallback['starts_at'] = $startLabel;
+                $fallback['ends_at'] = $endLabel;
+                $fallback['display_ends_at'] = $record['display_ends_at'] ?? '';
+                $images = collect($record['images'] ?? [])->keyBy('key');
+                $fallback['banner'] = $this->imageUrl($images->get('banner'), '/images/events/1/banner.webp');
+                $fallback['logo'] = $this->imageUrl($images->get('logo'));
+                $fallback['badge'] = $this->imageUrl($images->get('badge'));
+                $fallback['song'] = $this->mapEventSong($record['song'] ?? null, $images);
+                $fallback['member_bonuses'] = $this->mapBonusRows($record['member_bonuses'] ?? [], $images);
+                $fallback['support_bonuses'] = $this->mapBonusRows($record['support_bonuses'] ?? [], $images);
+                $fallback['event_cards'] = $this->mapEventCards($record['event_cards'] ?? [], $images);
+                $fallback['bonus_tables'] = $record['bonuses'] ?? [];
+                $fallback['related_url'] = $record['url'];
+                $fallback['point_rewards'] = collect($record['point_rewards'] ?? [])->flatten(1)->map(fn (array $row): array => [$row[0] ?? '', $row[1] ?? ''])->filter(fn (array $row): bool => $row[0] !== '' && $row[1] !== '' && preg_match('/\d/', $row[0]))->values()->all();
+                $fallback['reward_totals'] = [];
+                $fallback['reward_images'] = [];
+                $fallback['live_rewards'] = collect($record['live_rewards'][0] ?? [])->skip(1)->all();
+                $fallback['challenge_rewards'] = collect($record['live_rewards'][1] ?? [])->skip(1)->all();
+                $fallback['url'] = $record['url'];
+
+                return $fallback;
+            })->all();
+
+            return collect($mapped)->contains(fn (array $event): bool => (int) $event['id'] === 1)
+                ? $mapped
+                : array_merge([$current], $mapped);
+        });
+    }
+
+    private function imageUrl(?array $image, ?string $fallback = null): ?string
+    {
+        $local = data_get($image, 'local');
+        if (is_string($local) && (str_starts_with($local, '/event-assets/') || str_starts_with($local, '/events/'))) {
+            return $local;
+        }
+        if (is_string($local) && preg_match('~/storage/events/(\d+)/([^/]+)$~', parse_url($local, PHP_URL_PATH) ?: $local, $match)) {
+            return route('events.asset', ['event' => $match[1], 'file' => $match[2]], false);
+        }
+
+        return data_get($image, 'url', $fallback);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function mapBonusRows(array $rows, \Illuminate\Support\Collection $images): array
+    {
+        return collect($rows)->map(function (array $bonus) use ($images): array {
+            $bonus['image'] = $this->imageUrl($images->get($bonus['image_key'] ?? ''), $bonus['image'] ?? null) ?? '/images/ui/card-placeholder.webp';
+
+            return $bonus;
+        })->values()->all();
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function mapEventCards(array $cards, \Illuminate\Support\Collection $images): array
+    {
+        return collect($cards)->map(function (array $card) use ($images): array {
+            $card['image'] = $this->imageUrl($images->get($card['image_key'] ?? ''), $card['image'] ?? null) ?? '/images/ui/card-placeholder.webp';
+
+            return $card;
+        })->values()->all();
+    }
+
+    /** @return array<string, mixed>|null */
+    private function mapEventSong(?array $song, \Illuminate\Support\Collection $images): ?array
+    {
+        if (! $song || empty($song['title'])) return null;
+        $song['image'] = $this->imageUrl($images->get($song['image_key'] ?? 'song'), $song['image'] ?? null);
+
+        return $song['image'] ? $song : null;
+    }
+
+    private function parseEventDate(?string $date): ?Carbon
+    {
+        if (! is_string($date) || $date === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y. m. d. H:i', $date, 'Asia/Seoul');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function endDateFromDescription(?string $description): ?Carbon
+    {
+        if (! is_string($description) || ! preg_match('/개최 기간\s*\d{4}\.\s*\d{2}\.\s*\d{2}\.\s*\d{2}:\d{2}\s*[–-]\s*(\d{4}\.\s*\d{2}\.\s*\d{2}\.\s*\d{2}:\d{2})/u', $description, $match)) {
+            return null;
+        }
+
+        return $this->parseEventDate($match[1]);
     }
 
     /** @return array<string, mixed> */

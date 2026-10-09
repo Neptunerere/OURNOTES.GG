@@ -7,13 +7,16 @@ use App\Models\Member;
 use App\Models\Song;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
     public function __invoke(): View
     {
-        $lastSyncedAt = DB::table('data_sync_states')->where('source', 'bdon')->value('last_synced_at');
+        $lastSyncedAt = Schema::hasTable('data_sync_states')
+            ? DB::table('data_sync_states')->where('source', 'bdon')->value('last_synced_at')
+            : null;
 
         return view('home', [
             'featured' => Member::with('character')->orderByDesc('score_up')->orderByDesc('performance')->limit(10)->get(),

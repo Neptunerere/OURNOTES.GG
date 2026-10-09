@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\Snapshot;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class GachaController extends Controller
@@ -14,12 +15,35 @@ class GachaController extends Controller
     {
         $pickups = Member::query()
             ->with('character')
-            ->whereIn('source_id', range(51, 64))
             ->get()
             ->keyBy('source_id');
 
-        $limitedGachas = collect($this->limitedGachas($pickups))
-            ->map(fn (array $gacha): array => $this->withStatus($gacha))
+        $gachas = collect($this->limitedGachas($pickups));
+        $supportIds = $gachas->flatMap(fn (array $gacha): array => $gacha['pickup_support_ids'] ?? ((int) $gacha['id'] === 3 ? [62, 63] : []))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $supports = $supportIds->isEmpty()
+            ? collect()
+            : Snapshot::query()->whereIn('source_id', $supportIds)->get()->keyBy('source_id');
+
+        $limitedGachas = $gachas
+            ->map(function (array $gacha) use ($supports): array {
+                $gacha = $this->withStatus($gacha);
+                $supportIds = $gacha['pickup_support_ids'] ?? ((int) $gacha['id'] === 3 ? [62, 63] : []);
+                $gacha['supports'] = collect($supportIds)
+                    ->map(fn (int $id) => $supports->get($id))
+                    ->filter()
+                    ->values();
+
+                return $gacha;
+            })
+            ->sortBy(fn (array $gacha): int => match ($gacha['status']) {
+                '진행 중' => 0,
+                '예정' => 1,
+                default => 2,
+            })
+            ->values()
             ->all();
 
         return view('gacha.index', [
@@ -32,7 +56,6 @@ class GachaController extends Controller
     {
         $pickups = Member::query()
             ->with('character')
-            ->whereIn('source_id', range(51, 64))
             ->get()
             ->keyBy('source_id');
         $allMembers = Member::query()->with('character')->get();
@@ -56,32 +79,33 @@ class GachaController extends Controller
             $event = $this->withStatus($event);
         }
 
-        $pickupMemberIds = match ($gacha) {
+        $synced = isset($event['source_id']);
+        $pickupMemberIds = $synced ? ($event['pickup_member_ids'] ?? []) : match ($gacha) {
             0 => [64],
             1 => [51, 52, 53, 54, 55],
             2 => [56, 57, 58, 59, 60],
             3 => [61, 62],
             default => [],
         };
-        $pickupSupportIds = $gacha === 3 ? [62, 63] : [];
+        $pickupSupportIds = $synced ? ($event['pickup_support_ids'] ?? []) : ($gacha === 3 ? [62, 63] : []);
         $event['pickup_members'] = $this->members($pickups, $pickupMemberIds);
-        if ($gacha === 0) {
+        if (! $synced && $gacha === 0) {
             $event['pickup_members'] = [$this->birthdayMember($pickups)];
         }
         $event['pickup_supports'] = $pickupSupportIds === []
             ? collect()
             : Snapshot::query()->whereIn('source_id', $pickupSupportIds)->get();
-        $event['rates'] = $this->ratesFor($gacha);
+        $event['rates'] = $synced && $event['rates'] ? $event['rates'] : $this->ratesFor($gacha);
         $event['draw_pools'] = $this->drawPools(
             $event['rates'],
             $allMembers,
             $pickupMemberIds,
             Snapshot::query()->get(),
             $pickupSupportIds,
-            $gacha === 0,
+            (! $synced && $gacha === 0) || ($synced && (int) $event['source_id'] === 11),
         );
         $event['permanent'] = $permanent;
-        $event['ten_pull_guarantee'] = in_array($gacha, [1, 2, 8], true);
+        $event['ten_pull_guarantee'] = $synced ? (bool) $event['ten_pull_guarantee'] : in_array($gacha, [1, 2, 8], true);
 
         return view('gacha.show', ['event' => $event]);
     }
@@ -208,7 +232,7 @@ class GachaController extends Controller
      */
     private function limitedGachas(Collection $pickups): array
     {
-        return [
+        $gachas = [
             [
                 'id' => 0,
                 'title' => '마하시 미쿠 HAPPY BIRTHDAY 26-27 뽑기',
@@ -270,6 +294,18 @@ class GachaController extends Controller
                 'support_count' => 60,
             ],
         ];
+
+        $synced = Storage::disk('local')->json('bdon/gachas.json');
+        if (! is_array($synced)) return $gachas;
+        $byId = collect($gachas)->keyBy('id');
+        foreach ($synced as $record) {
+            if (! is_array($record) || ! isset($record['id'], $record['source_id'])) continue;
+            $record['members'] = $this->members($pickups, $record['pickup_member_ids'] ?? []);
+            $old = $byId->get((int) $record['id'], []);
+            $byId->put((int) $record['id'], array_merge($old, $record));
+        }
+
+        return $byId->values()->all();
     }
 
     /**

@@ -9,11 +9,11 @@
         $finalMax = [1=>70,2=>80,3=>90,5=>90][$snapshot->level_growth] ?? 90;
     @endphp
     <main class="mx-auto max-w-[1400px] px-4 py-6 lg:px-8" x-data="snapStats(@js(['max'=>['performance'=>$snapshot->performance,'technique'=>$snapshot->technique,'visual'=>$snapshot->visual],'rates'=>$rates,'baseMax'=>$baseMax,'finalMax'=>$finalMax,'support'=>$snapshot->support_skill_levels ?? [],'gekisou'=>$snapshot->gekisou_support_levels ?? []]))">
-        <a href="{{route('snapshots.index')}}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 스냅 데이터베이스</a>
+        <a href="{{route('snapshots.index')}}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 스냅 목록</a>
         <div class="mt-4 grid gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
             <aside class="overflow-hidden rounded-xl border bg-white">
                 <div class="aspect-[4/3] bg-slate-100">@if($snapshot->image_url)<img src="{{$snapshot->image_url}}" class="h-full w-full object-cover" alt="{{$snapshot->name}}">@endif</div>
-                <div class="p-6"><div class="flex items-center gap-2"><x-rarity-icon :rarity="$snapshot->rarity" /><x-type-icon :type="$snapshot->type" /><x-band-logo :band="$snapshot->band" size="md" class="ml-auto" /></div><h1 class="mt-4 text-2xl font-black">{{$snapshot->name}}</h1><p class="mt-2 text-sm text-slate-400">{{$snapshot->character_name}}</p>@if($snapshot->released_at)<p class="mt-3 text-[10px] text-slate-400">출시일 {{$snapshot->released_at->format('Y.m.d')}}</p>@endif</div>
+                <div class="p-6"><div class="flex items-center gap-2"><x-rarity-icon :rarity="$snapshot->rarity" :name="$snapshot->name" :source-id="$snapshot->source_id" /><x-type-icon :type="$snapshot->type" /><x-band-logo :band="$snapshot->band" size="md" class="ml-auto" /></div><h1 class="mt-4 text-2xl font-black">{{$snapshot->name}}</h1><p class="mt-2 text-sm text-slate-400">{{$snapshot->character_name}}</p>@if($snapshot->released_at)<p class="mt-3 text-[10px] text-slate-400">출시일 {{$snapshot->released_at->format('Y.m.d')}}</p>@endif</div>
             </aside>
             <section class="space-y-5">
                 <div class="overflow-hidden rounded-xl border bg-white">

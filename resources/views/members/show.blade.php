@@ -18,10 +18,10 @@
             'live' => $member->live_skill_levels ?? [],
             'gekisou' => $member->gekisou_skill_levels ?? [],
         ]))">
-        <a href="{{ route('members.index') }}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 멤버 데이터베이스</a>
+        <a href="{{ route('members.index') }}" class="text-[11px] font-bold text-[#8b7cf6]">‹ 멤버 목록</a>
         <div class="mt-4 grid gap-6 lg:grid-cols-[400px_minmax(0,1fr)]">
             <aside class="overflow-hidden rounded-xl border bg-white">
-                <div class="relative aspect-[3/4]">@if($member->image_url)<img src="{{ $member->image_url }}" class="h-full w-full object-cover" alt="{{ $member->name }}">@endif<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 to-transparent p-6 pt-28 text-white"><div class="flex items-center gap-2"><x-rarity-icon :rarity="$member->rarity" /><x-type-icon :type="$member->type" /></div><h1 class="mt-3 text-2xl font-black">{{ $member->name }}</h1><div class="mt-2 flex items-center justify-between gap-3"><span class="text-sm text-white/80">{{ $member->character->name }}</span><x-band-logo :band="$member->character->band" size="md" :show-name="false" /></div></div></div>
+                <div class="relative aspect-[3/4]">@if($member->image_url)<img src="{{ $member->image_url }}" class="h-full w-full object-cover" alt="{{ $member->name }}">@endif<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 to-transparent p-6 pt-28 text-white"><div class="flex items-center gap-2"><x-rarity-icon :rarity="$member->rarity" :name="$member->name" :source-id="$member->source_id" /><x-type-icon :type="$member->type" /></div><h1 class="mt-3 text-2xl font-black">{{ $member->name }}</h1><div class="mt-2 flex items-center justify-between gap-3"><span class="text-sm text-white/80">{{ $member->character->name }}</span><x-band-logo :band="$member->character->band" size="md" :show-name="false" /></div></div></div>
             </aside>
             <section class="space-y-5">
                 <div class="overflow-hidden rounded-xl border bg-white">
