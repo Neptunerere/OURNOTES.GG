@@ -170,6 +170,14 @@ class BdonGachas
         $inPickupSection = false;
         foreach ($nodes as $node) {
             if (in_array(strtolower($node->nodeName), ['h2', 'h3', 'h4'], true)) {
+                // Card titles are headings nested inside each pickup link. They
+                // are part of the pickup section, not the start of a new one.
+                $pickupCardHeading = $xpath->query(
+                    'ancestor::a[contains(@href, "/ko/cards/") or contains(@href, "/ko/support-cards/")]',
+                    $node,
+                )->length > 0;
+                if ($inPickupSection && $pickupCardHeading) continue;
+
                 $headingText = trim(preg_replace('/\\s+/u', ' ', $node->textContent) ?? '');
                 if (! $inPickupSection) {
                     $inPickupSection = $headingText === '픽업 카드';
