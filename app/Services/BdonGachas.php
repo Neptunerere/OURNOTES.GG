@@ -176,7 +176,9 @@ class BdonGachas
                     'ancestor::a[contains(@href, "/ko/cards/") or contains(@href, "/ko/support-cards/")]',
                     $node,
                 )->length > 0;
-                if ($inPickupSection && $pickupCardHeading) continue;
+                if ($inPickupSection && $pickupCardHeading) {
+                    continue;
+                }
 
                 $headingText = trim(preg_replace('/\\s+/u', ' ', $node->textContent) ?? '');
                 if (! $inPickupSection) {
