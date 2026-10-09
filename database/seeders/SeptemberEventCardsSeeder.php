@@ -36,7 +36,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'leader' => $this->leaderLevels('블루 멤버의 퍼포먼스 %s, 추가로 무겐다이 뮤타입 멤버의 퍼포먼스 %s', [[72, 18], [82, 18], [92, 18], [102, 18], [102, 48]]),
                 'live' => $this->perfectScoreLevels([90, 100, 110, 120, 150]),
                 'gekisou' => $this->justQuantityLevels([6, 5, 4, 3, 1], 5),
-                'image_url' => '/images/members/yuno-heart-reboot.webp',
+                'image_url' => null,
             ],
             [
                 'source_id' => 62, 'character' => '미야나가 노노카', 'name' => '큐트 플로트', 'slug' => 'nonoka-cute-float', 'rarity' => 'SSR', 'rarity_id' => 4,
@@ -44,7 +44,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'leader' => $this->leaderLevels('무겐다이 뮤타입 멤버의 비주얼 %s, 추가로 격주 스킬 [JUST] 멤버는 비주얼 %s', [[72, 18], [82, 18], [92, 18], [102, 18], [132, 18]]),
                 'live' => $this->simpleScoreLevels([70, 80, 90, 100, 130]),
                 'gekisou' => $this->fixedLevels('JUST 격주 중<br>JUST 획득량 <b class="hi">3 UP</b>'),
-                'image_url' => '/images/members/nonoka-cute-float.webp',
+                'image_url' => null,
             ],
             [
                 'source_id' => 63, 'character' => '미네츠키 리츠', 'name' => 'ナイト・フライト', 'slug' => 'ritsu-night-flight', 'rarity' => 'SR', 'rarity_id' => 3,
@@ -52,7 +52,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'leader' => $this->singleLeaderLevels('무겐다이 뮤타입 멤버의<br>테크닉', [42, 51, 60, 72, 102]),
                 'live' => $this->perfectScoreLevels([60, 70, 80, 90, 120]),
                 'gekisou' => $this->justQuantityLevels([6, 5, 4, 3, 1], 4),
-                'image_url' => '/images/members/ritsu-night-flight.webp',
+                'image_url' => null,
             ],
         ];
 
@@ -99,7 +99,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'live_support' => '장착한 멤버의 라이브 스킬 발동 시간 <b class="hi">2.50초</b> 연장<br>「무겐다이 뮤타입」 멤버일 경우, 라이브 스킬 발동 시간 <b class="hi">5.00초</b> 연장',
                 'gekiso_support' => 'JUST 격주 중 JUST 판정 1회마다 스코어 <b class="hi">1%씩 UP</b>(최대 <b class="hi">40%</b>)<br>「무겐다이 뮤타입」 멤버일 경우 스코어 <b class="hi">3%씩 UP</b>',
                 'diary' => "かっこいいだの、ビッグラブだの\n照れ臭いことをまっすぐに\nキラキラの目で、あいつらは言ってくる\n\nなんだかちょっと懐かしい\nそうだよね\nバンドって、こんな感じだった\n\n音楽を仕事にするのに慣れてきて\n望まれたものは、作れるようになったけど\n今回はなんか、それじゃ嫌かも\n\n胸の奥で鼓動が鳴ってる\n体がいつもより、ほんのちょっとだけ軽い\nひんやりしているはずのこいつも\n今は少し、熱く感じる",
-                'image_url' => '/images/snapshots/yuno-blue-burning-heart.webp',
+                'image_url' => null,
             ],
             [
                 'source_id' => 63, 'name' => '매지컬 피지컬 파이팅!', 'slug' => 'arale-magical-physical-fighting', 'character_name' => '나카마치 아라레 · 미야나가 노노카 · 미네츠키 리츠 · 후지 미야코', 'rarity' => 'SSR', 'rarity_id' => 4,
@@ -108,7 +108,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'live_support' => '장착한 멤버의 라이브 스킬 발동 중 GREAT를 PERFECT로 변환(<b class="hi">10회</b>까지)<br>「무겐다이 뮤타입」 멤버일 경우, GOOD 시에도 발동',
                 'gekiso_support' => 'JUST 격주 중 JUST 판정 영역 <b class="hi">200% UP</b><br>「무겐다이 뮤타입」 멤버일 경우 JUST 판정 영역 <b class="hi">300% UP</b>',
                 'diary' => "ユノさんちゃん、こちらをどうぞ！\n\nあっ、これは劇場版にて初めて出てきたオブリークニーレイズバージョンでして、見てくださいここのお腹のあたり！\nちょ〜っとわかりにくいかもなんですけど、マジアームストロングのお腹のところが、ほら！　ムキって！　ムキってなってるんですよ！\nこれは映画の中で強敵・カネスキヤーネンと戦ったときに、マジアームストロングもマジハムスプリングも一度負けちゃうんですけど、そこからこのままじゃダメだ！　って特訓パートに入るんです！\n二人はカネスキヤーネンのパワーの前になすすべもなく〜って感じだったので、じゃあどんな攻撃にも負けない強いボディを手に入れようってことになって！\nそこで編み出したのが、この！　オブリークニーレイズなんですよ！\nこれはお腹の横のところを鍛えるトレーニングなんですけど、そのおかげでもう一度戦った時にはもう全然ムキムキで！\nほんと〜に二人がかっこよくってですね〜！　……え？\n\n長くてよくわかんない？　そ、そんな〜〜〜！",
-                'image_url' => '/images/snapshots/arale-magical-physical-fighting.webp',
+                'image_url' => null,
             ],
             [
                 'source_id' => 64, 'name' => 'まあるい休息', 'slug' => 'miyako-ritsu-round-rest', 'character_name' => '후지 미야코 · 미네츠키 리츠', 'rarity' => 'SR', 'rarity_id' => 3,
@@ -117,7 +117,7 @@ class SeptemberEventCardsSeeder extends Seeder
                 'live_support' => '장착한 멤버의 라이브 스킬 발동 중 GREAT를 PERFECT로 변환(<b class="hi">8회</b>까지)<br>「무겐다이 뮤타입」 멤버일 경우, GOOD 시에도 발동',
                 'gekiso_support' => 'JUST 격주 중 JUST 판정 영역 <b class="hi">100% UP</b><br>「무겐다이 뮤타입」 멤버일 경우 JUST 판정 영역 <b class="hi">200% UP</b>',
                 'diary' => "ドーナツとは、摩訶不思議である\n\n常に締め切りに追われる日々\n疲れた脳は糖分を欲する\nそれでも右手のペンを手放せない時\n空いた左手にジャストフィット\n\n美しい円形\nその真ん中にぽっかりと空いた穴\n\nまるでそこに吸い込まれるように\n気が付けば私の手には\n美味しい丸が、収まっているのだ",
-                'image_url' => '/images/snapshots/miyako-ritsu-round-rest.webp',
+                'image_url' => null,
             ],
         ];
 

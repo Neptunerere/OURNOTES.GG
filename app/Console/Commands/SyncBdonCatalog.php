@@ -50,7 +50,7 @@ class SyncBdonCatalog extends Command
                 }
                 if ($row['id'] === 64) {
                     $changes = array_merge($changes, [
-                        'image_url' => $this->localImage('members/miku-happy-birthday.webp') ?? 'https://assets.bdon.moe/kr/zh-Hans/MemberCard/64/member_full/member_full.webp',
+                        'image_url' => 'https://assets.bdon.moe/kr/zh-Hans/MemberCard/64/member_full/member_full.webp',
                         'type' => '퍼플', 'rarity' => '생일', 'rarity_id' => 4,
                         'performance' => 36213, 'technique' => 27856, 'visual' => 27856,
                         'max_performance' => 36213, 'max_technique' => 27856, 'max_visual' => 27856,
@@ -82,7 +82,7 @@ class SyncBdonCatalog extends Command
                 'leader_skill' => '일가 Dumb Rock! 멤버의 퍼포먼스 85.0% UP, 추가로 퍼플 멤버는 퍼포먼스 40.0% UP',
                 'live_skill' => '[심플] 5.0초간, 스코어 115.0% UP',
                 'gekisou_skill' => 'LUCK 격주 중 추첨 게이지 획득량 200.0% UP; BAD 이하 판정의 라이프 감소를 20.0% 완화한다',
-                'image_url' => $this->localImage('members/miku-happy-birthday.webp') ?? 'https://assets.bdon.moe/kr/zh-Hans/MemberCard/64/member_full/member_full.webp',
+                'image_url' => 'https://assets.bdon.moe/kr/zh-Hans/MemberCard/64/member_full/member_full.webp',
                 'source_url' => self::BASE.'cards/64', 'released_at' => '2026-10-04',
             ]);
             $cardCreates++;

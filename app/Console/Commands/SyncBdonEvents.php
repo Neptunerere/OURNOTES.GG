@@ -8,10 +8,9 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
-#[Signature('ournotes:sync-bdon-events {--dry-run : Fetch and display changes without saving them} {--no-images : Skip downloading event art} {--refresh : Refresh existing event data} {--all : Update existing data and add new events}')]
+#[Signature('ournotes:sync-bdon-events {--dry-run : Fetch and display changes without saving them} {--no-images : Deprecated; images are never downloaded} {--refresh : Refresh existing event data} {--all : Update existing data and add new events}')]
 #[Description('BDon 이벤트 목록, 상세 정보와 이벤트 배너를 가져와 사이트 데이터를 갱신합니다.')]
 class SyncBdonEvents extends Command
 {
@@ -29,6 +28,10 @@ class SyncBdonEvents extends Command
 
         $path = 'bdon/events.json';
         $previous = Storage::disk('local')->exists($path) ? Storage::disk('local')->json($path) : null;
+        if (! is_array($previous) && DB::getSchemaBuilder()->hasTable('data_sync_states')) {
+            $storedPayload = DB::table('data_sync_states')->where('source', 'bdon-events')->value('payload');
+            $previous = is_string($storedPayload) ? json_decode($storedPayload, true) : null;
+        }
         $previous = is_array($previous) ? $previous : [];
         $existingIds = collect($previous)->pluck('id')->map(fn ($id): int => (int) $id)->all();
         $records = array_values(array_filter($records, fn (array $event): bool => $this->option('refresh') || $this->option('all') || ! in_array((int) $event['id'], $existingIds, true)));
@@ -74,50 +77,11 @@ class SyncBdonEvents extends Command
             return self::SUCCESS;
         }
         $newEvents = $records;
-        if (! $this->option('no-images')) {
-            foreach ($records as $eventIndex => $event) {
-                foreach ($event['images'] as $imageIndex => $image) {
-                    $savedImage = data_get(collect($previous)->firstWhere('id', $event['id']), 'images', []);
-                    $savedImage = collect($savedImage)->firstWhere('key', $image['key']);
-                    $existingLocal = data_get($savedImage, 'local');
-                    if ($existingLocal && $existingLocal !== $image['url'] && Storage::disk('public')->exists($this->publicDiskPath($existingLocal))) {
-                        $records[$eventIndex]['images'][$imageIndex]['local'] = $existingLocal;
-                        continue;
-                    }
-                    $records[$eventIndex]['images'][$imageIndex]['local'] = $image['url'];
-                    try {
-                        $response = Http::connectTimeout(5)->timeout(30)->retry(2, 300)->withOptions(['allow_redirects' => true])->get($image['url']);
-                        if ($response->successful() && str_starts_with($response->header('Content-Type', ''), 'image/')) {
-                            $extension = match (strtolower($response->header('Content-Type', ''))) {
-                                'image/png' => 'png',
-                                'image/jpeg' => 'jpg',
-                                default => 'webp',
-                            };
-                            $filename = $image['key'];
-                            $storagePath = 'events/'.$event['id'].'/'.$filename.'.'.$extension;
-                            Storage::disk('public')->put($storagePath, $response->body());
-                            Storage::disk('local')->put('events/'.$event['id'].'/'.$filename.'.'.$extension, $response->body());
-                            $publicPath = public_path('event-media/'.$event['id'].'/'.$filename.'.'.$extension);
-                            if (! is_dir(dirname($publicPath))) {
-                                mkdir(dirname($publicPath), 0775, true);
-                            }
-                            file_put_contents($publicPath, $response->body());
-                            $records[$eventIndex]['images'][$imageIndex]['local'] = route('events.asset', ['event' => $event['id'], 'file' => $filename.'.'.$extension], false);
-                        }
-                    } catch (\Throwable $exception) {
-                        $this->warn('이미지 다운로드 실패, 원본 주소를 사용합니다: 이벤트 #'.$event['id'].' '.$image['key'].' ('.$exception->getMessage().')');
-                    }
-                }
-            }
-        } else {
-            foreach ($records as $eventIndex => $event) {
-                foreach ($event['images'] as $imageIndex => $image) {
-                    $oldImage = collect(data_get(collect($previous)->firstWhere('id', $event['id']), 'images', []))->firstWhere('key', $image['key']);
-                    $oldLocal = data_get($oldImage, 'local');
-                    $records[$eventIndex]['images'][$imageIndex]['local'] = is_string($oldLocal) && $oldLocal !== $image['url']
-                        ? $oldLocal
-                        : $image['url'];
-                }
+        foreach ($records as $eventIndex => $event) {
+            foreach ($event['images'] as $imageIndex => $image) {
+                // Keep BDon's image URL as a reference; do not copy their assets
+                // into our repository or server storage.
+                $records[$eventIndex]['images'][$imageIndex]['local'] = $image['url'];
             }
         }
 
@@ -125,9 +89,10 @@ class SyncBdonEvents extends Command
         foreach ($records as $record) {
             $saved->put($record['id'], $record);
         }
-        Storage::disk('local')->put($path, json_encode($saved->values()->all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+        $payload = json_encode($saved->values()->all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        Storage::disk('local')->put($path, $payload);
         if (DB::getSchemaBuilder()->hasTable('data_sync_states')) {
-            DB::table('data_sync_states')->updateOrInsert(['source' => 'bdon-events'], ['last_synced_at' => now('UTC')]);
+            DB::table('data_sync_states')->updateOrInsert(['source' => 'bdon-events'], ['last_synced_at' => now('UTC'), 'payload' => $payload]);
         }
         Cache::forget('bdon-events-v2');
         $imageCount = collect($records)->sum(fn (array $event): int => count($event['images'] ?? []));
@@ -136,10 +101,4 @@ class SyncBdonEvents extends Command
         return self::SUCCESS;
     }
 
-    private function publicDiskPath(string $url): string
-    {
-        $path = parse_url($url, PHP_URL_PATH) ?: $url;
-
-        return preg_replace('~^/storage/~', '', $path) ?? $path;
-    }
 }

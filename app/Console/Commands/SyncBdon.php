@@ -6,16 +6,16 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('ournotes:sync-bdon-all {--no-images : Keep remote image URLs instead of downloading event and gacha images}')]
-#[Description('BDon 이벤트, 뽑기, 멤버 카드, 서포트 카드, 곡 정보를 차례로 모두 동기화합니다.')]
+#[Signature('ournotes:sync-bdon-all {--no-images : Deprecated; images are never downloaded}')]
+#[Description('BDon 이벤트, 뽑기, 멤버 카드, 서포트 카드, 곡 정보를 차례로 동기화합니다. 이미지는 원본 URL만 기록합니다.')]
 class SyncBdon extends Command
 {
     public function handle(): int
     {
         $commands = [
             ['ournotes:sync-bdon', []],
-            ['ournotes:sync-bdon-events', $this->option('no-images') ? ['--no-images' => true] : []],
-            ['ournotes:sync-bdon-gachas', $this->option('no-images') ? ['--no-images' => true] : []],
+            ['ournotes:sync-bdon-events', ['--no-images' => true]],
+            ['ournotes:sync-bdon-gachas', ['--no-images' => true]],
         ];
         $failed = [];
 

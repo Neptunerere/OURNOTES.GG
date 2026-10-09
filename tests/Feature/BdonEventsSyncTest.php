@@ -29,8 +29,9 @@ class BdonEventsSyncTest extends TestCase
         $this->assertSame('2026. 11. 11. 20:59', $records[0]['display_ends_at']);
         $this->assertSame('banner', $records[0]['images'][0]['key']);
         $this->assertCount(3, $records[0]['images']);
-        Storage::disk('public')->assertExists('images/events/2/banner.webp');
-        Storage::disk('public')->assertExists('images/events/2/badge.webp');
+        $this->assertSame('https://assets.bdon.moe/banner.webp', $records[0]['images'][0]['local']);
+        Storage::disk('public')->assertMissing('images/events/2/banner.webp');
+        Storage::disk('public')->assertMissing('images/events/2/badge.webp');
 
         $this->artisan('ournotes:sync-bdon-events')->expectsOutputToContain('새 이벤트가 없습니다')->assertSuccessful();
         $this->assertCount(1, Storage::disk('local')->json('bdon/events.json'));

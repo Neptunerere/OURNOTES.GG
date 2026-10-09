@@ -18,7 +18,6 @@ Route::get('/members/{member:slug}', [MemberController::class, 'show'])->name('m
 Route::get('/songs', [SongController::class, 'index'])->name('songs.index');
 Route::get('/songs/{song:slug}', [SongController::class, 'show'])->name('songs.show');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
-Route::get('/event-assets/{event}/{file}', [EventController::class, 'image'])->whereNumber('event')->name('events.asset');
 Route::get('/events/{event}', [EventController::class, 'show'])->whereNumber('event')->name('events.show');
 Route::get('/gacha', [GachaController::class, 'index'])->name('gacha.index');
 Route::get('/gacha/{gacha}', [GachaController::class, 'show'])->whereNumber('gacha')->name('gacha.show');

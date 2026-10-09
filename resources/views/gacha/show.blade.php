@@ -11,7 +11,7 @@
 
         <article class="mt-5 overflow-hidden rounded-2xl border border-[#34435e] bg-[#111d33] shadow-2xl shadow-black/20">
             <div class="relative h-48 overflow-hidden bg-gradient-to-br {{ $event['theme'] }} sm:h-72">
-                <img src="{{ $event['banner'] ?? $event['image'] }}" alt="{{ $event['image_alt'] }}" class="block h-full w-full object-cover object-center">
+                @if(!empty($event['banner']) || !empty($event['image']))<img src="{{ $event['banner'] ?? $event['image'] }}" alt="{{ $event['image_alt'] }}" class="block h-full w-full object-cover object-center">@endif
                 <div class="absolute inset-0 bg-gradient-to-t from-[#111d33] via-[#111d33]/10 to-transparent"></div>
                 <span class="absolute left-4 top-4 rounded-full border px-3 py-1.5 text-[10px] font-black shadow {{ $event['permanent'] ? 'border-sky-200/30 bg-sky-950/85 text-sky-100' : $statusClasses }}"><span class="mr-1.5 inline-block size-1.5 rounded-full bg-current"></span>{{ $event['permanent'] ? '상시' : $event['status'] }}</span>
                 <div class="absolute inset-x-0 bottom-0 p-5 sm:p-7">

@@ -44,7 +44,7 @@ class EventTest extends TestCase
             ->assertSee('나카마치 아라레')
             ->assertSee('매지컬 피지컬 파이팅!')
             ->assertSee('사랑의 격류 AtoZ 보상 스탬프')
-            ->assertSee('/images/events/1/reward-star.webp')
+            ->assertDontSee('/images/events/1/reward-star.webp')
             ->assertSee('보상 합계')
             ->assertSee('3,000,000 pt 달성 기준')
             ->assertSee('×280')

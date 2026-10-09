@@ -10,8 +10,8 @@
         <a href="{{ route('events.index') }}" class="text-[11px] font-bold text-[#9d90ff]">‹ 이벤트 목록</a>
 
         <section class="mt-4 overflow-hidden rounded-2xl border border-[#343b50] bg-[#111b2f]">
-            <div class="relative aspect-[2.4/1] min-h-52 overflow-hidden bg-[#0b1426]">
-                <img src="{{ $event['banner'] ?? '/images/events/1/banner.webp' }}" alt="{{ $event['title'] }} 배너" class="h-full w-full object-cover">
+            <div class="relative aspect-[2.4/1] min-h-52 overflow-hidden bg-gradient-to-br from-[#1b2942] via-[#142036] to-[#0b1426]">
+                @if(!empty($event['banner']))<img src="{{ $event['banner'] }}" alt="{{ $event['title'] }} 배너" class="h-full w-full object-cover">@endif
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#071022]/40"></div>
                 @if(!empty($event['logo']))<img src="{{ $event['logo'] }}" alt="{{ $event['title'] }} 로고" class="absolute right-[8%] top-1/2 w-[38%] -translate-y-1/2 drop-shadow-2xl">@endif
                 <span class="absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-bold shadow {{ $statusClasses }}"><span class="mr-1.5 inline-block size-1.5 rounded-full bg-current"></span>{{ $event['status'] }}</span>
@@ -36,7 +36,7 @@
         @if(!empty($event['song']))<section class="mt-7 rounded-xl border border-[#343742] bg-[#17191f] p-5 sm:p-6">
             <h2 class="text-sm font-black text-white">이벤트 곡</h2>
             <div class="mt-4 flex items-center gap-4">
-                <img src="{{ $event['song']['image'] }}" alt="{{ $event['song']['title'] }}" class="size-20 rounded-lg object-cover">
+                @if(!empty($event['song']['image']))<img src="{{ $event['song']['image'] }}" alt="{{ $event['song']['title'] }}" class="size-20 rounded-lg object-cover">@endif
                 <div><h3 class="text-sm font-black text-slate-100">{{ $event['song']['title'] }}</h3><p class="mt-1 text-xs text-slate-400">{{ $event['song']['band'] }}</p></div>
             </div>
         </section>@endif
@@ -70,7 +70,7 @@
             <h2 class="text-sm font-black text-white">이벤트 카드</h2>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 @foreach($event['event_cards'] as $card)
-                    <div class="flex items-center gap-4 rounded-lg border border-white/10 bg-[#20232a] p-3"><img src="{{ $card['image'] }}" alt="{{ $card['name'] }}" class="h-24 w-20 rounded-md object-cover object-top"><p class="text-xs font-bold text-slate-200">{{ $card['name'] }}</p></div>
+                    <div class="flex items-center gap-4 rounded-lg border border-white/10 bg-[#20232a] p-3">@if(!empty($card['image']))<img src="{{ $card['image'] }}" alt="{{ $card['name'] }}" class="h-24 w-20 rounded-md object-cover object-top">@else<div class="h-24 w-20 shrink-0 rounded-md bg-white/5"></div>@endif<p class="text-xs font-bold text-slate-200">{{ $card['name'] }}</p></div>
                 @endforeach
             </div>
         </section>@endif
@@ -85,7 +85,7 @@
                 <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($event['reward_totals'] as $total)
                         <div class="flex min-h-16 items-center gap-3 rounded-lg border border-white/10 bg-[#20232a] px-3 py-2.5">
-                            <img src="{{ $total['image'] }}" alt="" class="size-11 shrink-0 object-contain">
+                            @if(!empty($total['image']))<img src="{{ $total['image'] }}" alt="" class="size-11 shrink-0 object-contain">@endif
                             <div class="min-w-0"><p class="truncate text-[10px] text-slate-400" title="{{ $total['name'] }}">{{ $total['name'] }}</p><b class="mt-0.5 block text-sm text-white">{{ $total['total'] }}</b></div>
                         </div>
                     @endforeach

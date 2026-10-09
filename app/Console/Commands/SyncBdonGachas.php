@@ -7,12 +7,11 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 
-#[Signature('ournotes:sync-bdon-gachas {--dry-run : Show changes without saving} {--no-images : Keep remote banner URLs instead of downloading images}')]
-#[Description('BDon 뽑기 목록과 상세 정보를 기존 뽑기 데이터 형식을 유지하며 동기화합니다.')]
+#[Signature('ournotes:sync-bdon-gachas {--dry-run : Show changes without saving} {--no-images : Deprecated; images are never downloaded}')]
+#[Description('BDon 뽑기 목록과 상세 정보를 동기화합니다. 이미지는 원본 URL만 기록합니다.')]
 class SyncBdonGachas extends Command
 {
     public function handle(BdonGachas $bdon): int
@@ -29,6 +28,10 @@ class SyncBdonGachas extends Command
 
         $path = 'bdon/gachas.json';
         $previous = Storage::disk('local')->json($path);
+        if (! is_array($previous) && DB::getSchemaBuilder()->hasTable('data_sync_states')) {
+            $storedPayload = DB::table('data_sync_states')->where('source', 'bdon-gachas')->value('payload');
+            $previous = is_string($storedPayload) ? json_decode($storedPayload, true) : null;
+        }
         $previous = is_array($previous) ? $previous : [];
         $previousBySource = collect($previous)->keyBy('source_id');
         $limited = array_values(array_filter($fetched, fn (array $gacha): bool => $gacha['limited'] && $gacha['starts_at_raw'] && $gacha['ends_at_raw']));
@@ -51,18 +54,9 @@ class SyncBdonGachas extends Command
             $gacha['ends_at_raw'] = $this->toKoreaTime($gacha['ends_at_raw'], $gacha['source_timezone']);
             $gacha['timezone'] = 'UTC+9';
             $gacha['source_banner'] = $gacha['banner'];
-            $existingLocal = $old['banner'] ?? null;
-            $existingPath = is_string($existingLocal) ? public_path(ltrim($existingLocal, '/')) : '';
-            $sameBanner = $existingLocal && ($old['source_banner'] ?? null) === $gacha['source_banner'];
-            if ($sameBanner && $existingLocal !== $gacha['source_banner'] && is_file($existingPath)) {
-                $gacha['banner'] = $existingLocal;
-            } elseif ($this->option('no-images')) {
-                $gacha['banner'] = $sameBanner && $existingLocal !== $gacha['source_banner'] ? $existingLocal : ($gacha['source_banner'] ?? null);
-            } elseif ($this->option('dry-run')) {
-                $gacha['banner'] = $gacha['source_banner'];
-            } else {
-                $gacha['banner'] = $this->downloadBanner($gacha) ?? ($gacha['source_banner'] ?? null);
-            }
+            // Store the source URL only. BDon artwork is not downloaded or
+            // copied into our repository/server filesystem.
+            $gacha['banner'] = $gacha['source_banner'] ?? null;
             $gacha['image'] = $gacha['banner'];
             $old ? $updated++ : $created++;
         }
@@ -81,9 +75,10 @@ class SyncBdonGachas extends Command
 
         $saved = $previousBySource;
         foreach ($limited as $gacha) $saved->put($gacha['source_id'], $gacha);
-        Storage::disk('local')->put($path, json_encode($saved->values()->all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+        $payload = json_encode($saved->values()->all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        Storage::disk('local')->put($path, $payload);
         if (DB::getSchemaBuilder()->hasTable('data_sync_states')) {
-            DB::table('data_sync_states')->updateOrInsert(['source' => 'bdon-gachas'], ['last_synced_at' => now('UTC')]);
+            DB::table('data_sync_states')->updateOrInsert(['source' => 'bdon-gachas'], ['last_synced_at' => now('UTC'), 'payload' => $payload]);
         }
 
         $this->info("한정 뽑기 {$created}건 추가, {$updated}건 갱신했습니다. 상시 뽑기 ".(count($fetched) - count($limited))."건은 기존 상시 목록 형식을 유지했습니다.");
@@ -118,33 +113,5 @@ class SyncBdonGachas extends Command
         $sourceOffset = sprintf('%s%02d:00', $offset[1], (int) $offset[2]);
 
         return Carbon::parse($dateTime, $sourceOffset)->setTimezone('Asia/Seoul')->format('Y-m-d H:i:s');
-    }
-
-    /** @param array<string,mixed> $gacha */
-    private function downloadBanner(array $gacha): ?string
-    {
-        $url = $gacha['source_banner'] ?? null;
-        if (! is_string($url) || $url === '') return null;
-        try {
-            $response = Http::connectTimeout(8)->timeout(35)->retry(2, 400)->get($url);
-            $contentType = strtolower($response->header('Content-Type', ''));
-            if (! $response->successful() || ! in_array($contentType, ['image/webp', 'image/png', 'image/jpeg', 'image/avif', 'image/gif'], true)) {
-                $this->warn('배너를 내려받지 못해 원본 주소를 사용합니다: 뽑기 #'.$gacha['source_id']);
-                return null;
-            }
-            $extension = match ($contentType) {'image/png' => 'png', 'image/jpeg' => 'jpg', 'image/avif' => 'avif', 'image/gif' => 'gif', default => 'webp'};
-            $relative = 'gacha-media/'.$gacha['source_id'].'/banner.'.$extension;
-            $directory = dirname(public_path($relative));
-            if (! is_dir($directory)) mkdir($directory, 0775, true);
-            file_put_contents(public_path($relative), $response->body());
-            Storage::disk('public')->put($relative, $response->body());
-            Storage::disk('local')->put('gachas/'.$gacha['source_id'].'/banner.'.$extension, $response->body());
-
-            return '/'.$relative;
-        } catch (\Throwable $exception) {
-            $this->warn('배너 다운로드 실패, 원본 주소를 사용합니다: 뽑기 #'.$gacha['source_id'].' ('.$exception->getMessage().')');
-
-            return null;
-        }
     }
 }
